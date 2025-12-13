@@ -1,0 +1,7 @@
+fastapi
+uvicorn[standard]
+yfinance
+pandas
+numpy<2.0
+pydantic
+
