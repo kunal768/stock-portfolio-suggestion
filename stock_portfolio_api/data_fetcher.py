@@ -5,41 +5,44 @@ All functions are synchronous as yfinance is synchronous.
 
 import yfinance as yf
 import pandas as pd
-from typing import Dict, List
+from typing import Dict, List, Any
 
 
 def get_live_prices(tickers: List[str]) -> Dict[str, float]:
     """
     Fetch current live prices for given tickers.
-    
-    Args:
-        tickers: List of stock ticker symbols
-        
-    Returns:
-        Dictionary mapping ticker to current price
-        
-    Raises:
-        Exception: If yfinance API call fails
     """
+    if not tickers:
+        return {}
+        
     try:
+        # Use string join for single API call
         tickers_obj = yf.Tickers(" ".join(tickers))
         prices = {}
         
         for ticker in tickers:
             try:
-                info = tickers_obj.tickers[ticker].info
-                current_price = info.get('currentPrice') or info.get('regularMarketPrice')
+                # Optimized: Access fast_info first if available (faster than .info)
+                t_obj = tickers_obj.tickers[ticker]
+                
+                # fast_info is a newer yfinance feature for real-time data
+                if hasattr(t_obj, 'fast_info'):
+                     current_price = t_obj.fast_info.get('last_price')
+                else:
+                     info = t_obj.info
+                     current_price = info.get('currentPrice') or info.get('regularMarketPrice')
+
                 if current_price:
                     prices[ticker] = float(current_price)
                 else:
-                    # Fallback: try to get last close price
-                    hist = tickers_obj.tickers[ticker].history(period="1d")
+                    # Fallback to history
+                    hist = t_obj.history(period="1d")
                     if not hist.empty:
                         prices[ticker] = float(hist['Close'].iloc[-1])
                     else:
-                        raise ValueError(f"Could not fetch price for {ticker}")
+                        print(f"Warning: Could not fetch price for {ticker}")
             except Exception as e:
-                raise ValueError(f"Error fetching price for {ticker}: {str(e)}")
+                print(f"Error fetching price for {ticker}: {str(e)}")
         
         return prices
     except Exception as e:
@@ -48,34 +51,48 @@ def get_live_prices(tickers: List[str]) -> Dict[str, float]:
 
 def get_historical_data(tickers: List[str]) -> pd.DataFrame:
     """
-    Fetch historical stock data for the last 7 days.
-    
-    Args:
-        tickers: List of stock ticker symbols
-        
-    Returns:
-        DataFrame with Date index and Close price columns for each ticker
-        
-    Raises:
-        Exception: If yfinance API call fails
+    Fetch historical stock data.
+    CHANGED: Increased period from '7d' to '3mo' to allow for 
+    moving average calculation (trend analysis).
     """
+    if not tickers:
+        return pd.DataFrame()
+
     try:
-        # Download 7-day period to ensure we get ~5 trading days
-        data = yf.download(" ".join(tickers), period="7d", progress=False)
+        # Fetch 3 months to ensure we have enough data for 20-day or 50-day MA
+        data = yf.download(" ".join(tickers), period="3mo", progress=False)
         
         if data.empty:
             raise ValueError("No historical data retrieved")
         
-        # Handle MultiIndex columns (when multiple tickers)
+        # Handle the yfinance structure
+        # yfinance returns a MultiIndex (Price, Ticker) if multiple tickers
         if isinstance(data.columns, pd.MultiIndex):
-            # Extract Close prices only
-            close_data = data['Close']
+            # Return just the Close prices. Columns will be the Tickers.
+            return data['Close']
         else:
-            # Single ticker case
-            close_data = pd.DataFrame(data['Close'])
-            close_data.columns = [tickers[0]]
-        
-        return close_data
+            # Single ticker case: Columns are just 'Open', 'Close', etc.
+            # We wrap it to match the structure of the multi-ticker return
+            df = pd.DataFrame(data['Close'])
+            df.columns = tickers if len(tickers) == 1 else df.columns
+            return df
     except Exception as e:
         raise RuntimeError(f"Failed to fetch historical data: {str(e)}")
 
+
+def get_ticker_details(tickers: List[str]) -> Dict[str, Dict[str, Any]]:
+    """
+    Fetch detailed info (P/E, Growth, Sector) for screening.
+    """
+    details = {}
+    # Note: Fetching .info is slow. In production, cache this or use a database.
+    try:
+        ytickers = yf.Tickers(" ".join(tickers))
+        for ticker in tickers:
+            try:
+                details[ticker] = ytickers.tickers[ticker].info
+            except Exception:
+                continue
+    except Exception as e:
+        print(f"Error fetching details: {e}")
+    return details

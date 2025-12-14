@@ -267,7 +267,6 @@ def main():
         border-left: 4px solid #1f77b4;
     }
     .stMetric {
-        background-color: white;
         padding: 1rem;
         border-radius: 0.5rem;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -292,11 +291,17 @@ def main():
         )
         
         # Strategy selection
-        available_strategies = ["tech", "dividend", "growth", "value"]
+        available_strategies = ["Ethical Investing", 
+            "Growth Investing", 
+            "Index Investing", 
+            "Quality Investing", 
+            "Value Investing"
+        ]
+        
         selected_strategies = st.multiselect(
             "Select Investment Strategies",
             options=available_strategies,
-            default=["tech"],
+            default=["Growth Investing"], # Set a valid default
             max_selections=2,
             help="Select 1-2 investment strategies"
         )
@@ -428,29 +433,40 @@ def main():
             
             # Ticker selection section
             st.markdown("#### 🔍 View Stock Details")
-            
-            # Dropdown for ticker selection
+
+            # 1. Define a callback to sync the button click with the dropdown
+            def set_ticker(ticker_symbol):
+                st.session_state.selected_ticker = ticker_symbol
+                st.session_state.ticker_selectbox = ticker_symbol
+
+            # 2. The Dropdown
+            # We remove the complex 'index' logic because we are now syncing state directly
             selected_ticker = st.selectbox(
                 "Select a ticker to view details:",
                 options=["Select a ticker..."] + ticker_list,
-                index=0 if st.session_state.selected_ticker is None else (ticker_list.index(st.session_state.selected_ticker) + 1 if st.session_state.selected_ticker in ticker_list else 0),
-                key="ticker_selectbox"
+                key="ticker_selectbox" 
             )
-            
-            # Quick access buttons for each ticker
+
+            # 3. Quick Access Buttons using the callback
             st.markdown("**Quick Access:**")
             button_cols = st.columns(min(len(ticker_list), 5))
             for idx, ticker in enumerate(ticker_list):
                 with button_cols[idx % len(button_cols)]:
-                    if st.button(f"📈 {ticker}", key=f"btn_{ticker}", use_container_width=True):
-                        st.session_state.selected_ticker = ticker
-                        st.rerun()
-            
-            # Update selected ticker from dropdown
+                    # Use on_click to trigger the state update immediately
+                    st.button(
+                        f"📈 {ticker}", 
+                        key=f"btn_{ticker}", 
+                        use_container_width=True,
+                        on_click=set_ticker,
+                        args=(ticker,)
+                    )
+
+            # 4. Sync logic (Handle when user manually uses the dropdown)
             if selected_ticker and selected_ticker != "Select a ticker...":
                 st.session_state.selected_ticker = selected_ticker
             elif selected_ticker == "Select a ticker...":
                 st.session_state.selected_ticker = None
+            
             
             # Display stock details if a ticker is selected
             if st.session_state.selected_ticker:
@@ -512,15 +528,16 @@ def main():
         # Welcome message
         st.info("👈 Use the sidebar to configure your investment parameters and generate a portfolio suggestion.")
         
-        # Instructions
+       # Instructions
         with st.expander("ℹ️ How to use"):
             st.markdown("""
             1. **Enter Investment Amount**: Minimum $5,000 USD
             2. **Select Strategies**: Choose 1-2 investment strategies:
-               - **Tech**: Technology stocks (AAPL, MSFT, GOOGL, AMZN, META)
-               - **Dividend**: Dividend-paying stocks (JNJ, PG, KO, PEP, WMT)
-               - **Growth**: Growth stocks (TSLA, NVDA, AMD, NFLX, DIS)
-               - **Value**: Value stocks (BRK.B, JPM, V, MA, HD)
+               - **Ethical Investing**: Companies excluding sensitive sectors (Energy, Tobacco, etc.).
+               - **Growth Investing**: Stocks with revenue growth > 15%.
+               - **Index Investing**: ETFs tracking major market indices (VOO, QQQ, VTI).
+               - **Quality Investing**: High ROE (>15%) and low Debt-to-Equity (<50%).
+               - **Value Investing**: Undervalued stocks with P/E ratio < 25.
             3. **Generate Portfolio**: Click the button to get your portfolio suggestion
             4. **Auto-Refresh**: Enable auto-refresh to see real-time portfolio value updates
             """)
