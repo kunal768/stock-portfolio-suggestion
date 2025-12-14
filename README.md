@@ -8,7 +8,8 @@ A FastAPI backend with Streamlit UI for generating stock portfolio suggestions b
 
 - **FastAPI Backend**: RESTful API for portfolio calculations
 - **Streamlit UI**: Beautiful, interactive web interface with real-time updates
-- **Multiple Strategies**: Tech, Dividend, Growth, and Value investment strategies
+- **Multiple Strategies**: Ethical, Growth, Quality, Value, and Index investment strategies
+- **Smart Allocation**: Momentum-based weighting algorithm that allocates more funds to better-performing assets
 - **Real-time Data**: Fetches live stock prices using yfinance
 - **Auto-refresh**: Automatically updates portfolio values at configurable intervals
 - **Interactive Charts**: Plotly charts showing portfolio value trends
@@ -80,10 +81,11 @@ The UI will automatically open in your browser at `http://localhost:8501`
 1. **Configure Investment**:
    - Enter investment amount (minimum $5,000)
    - Select 1-2 investment strategies:
-     - **Tech**: Technology stocks (AAPL, MSFT, GOOGL, AMZN, META)
-     - **Dividend**: Dividend-paying stocks (JNJ, PG, KO, PEP, WMT)
-     - **Growth**: Growth stocks (TSLA, NVDA, AMD, NFLX, DIS)
-     - **Value**: Value stocks (BRK.B, JPM, V, MA, HD)
+     - **Ethical Investing**: ESG-focused (Excludes Energy, Utilities, Basic Materials)
+     - **Growth Investing**: High-growth companies (Revenue Growth > 15%)
+     - **Quality Investing**: Financially robust (ROE > 15%, Debt/Equity < 50%)
+     - **Value Investing**: Undervalued companies (P/E Ratio < 25)
+     - **Index Investing**: Market ETFs (VOO, QQQ, VTI, SPY)
 
 2. **Generate Portfolio**: Click "Generate Portfolio" button
 
@@ -91,7 +93,7 @@ The UI will automatically open in your browser at `http://localhost:8501`
 
 3. **View Results**:
    - Summary metrics (Total Investment, Current Value, Leftover Cash)
-   - Portfolio holdings table
+   - Portfolio holdings table (showing unequal weights based on performance)
    - Interactive portfolio value trend chart
 
 ![Portfolio Value Trend](public/portfolio_value_trend_last_5day.png)
@@ -99,6 +101,7 @@ The UI will automatically open in your browser at `http://localhost:8501`
 ![Individual Stock Description](public/individual_stock_description_realtime.png)
 
 4. **Auto-Refresh**: Enable auto-refresh to see real-time portfolio value updates
+
 
 ### Using the API Directly
 
@@ -108,7 +111,7 @@ The UI will automatically open in your browser at `http://localhost:8501`
 ```json
 {
   "investment_amount": 10000,
-  "strategies": ["tech", "dividend"]
+  "strategies": ["Ethical Investing", "Growth Investing"]
 }
 ```
 
@@ -118,27 +121,40 @@ The UI will automatically open in your browser at `http://localhost:8501`
   "suggested_holdings": [
     {
       "ticker": "AAPL",
-      "allocated_usd": 1000.0,
-      "shares_purchased": 5
+      "allocated_usd": 1250.0,
+      "shares_purchased": 7
     }
   ],
-  "current_total_value_usd": 10050.0,
+  "current_total_value_usd": 10150.0,
   "weekly_value_trend": [
     {
       "date": "2024-01-15",
       "portfolio_value_usd": 10000.0
     }
   ],
-  "leftover_cash_usd": 50.0
+  "leftover_cash_usd": 25.0
 }
 ```
 
 ## Investment Strategies
 
-- **Tech**: Focus on technology companies
-- **Dividend**: Focus on dividend-paying stocks
-- **Growth**: Focus on high-growth companies
-- **Value**: Focus on undervalued stocks
+The engine intelligently selects stocks based on specific financial criteria:
+
+- **Ethical Investing**: Filters for ESG-friendly sectors, strictly excluding Energy, Utilities, and Basic Materials.
+- **Growth Investing**: Targets high-potential companies with >15% annual revenue growth.
+- **Quality Investing**: Selects financially robust companies with high Return on Equity (>15%) and low Debt-to-Equity (<50%).
+- **Value Investing**: Targets undervalued companies with a P/E ratio < 25.
+- **Index Investing**: Allocates to a fixed basket of broad-market ETFs (VOO, QQQ, VTI, etc.) for stability.
+
+### 🧠 Smart Allocation Logic
+
+Unlike traditional portfolios that split funds equally, this engine uses a **Momentum-Based Allocation** algorithm:
+
+- **Trend Analysis**: The system fetches 3 months of historical price data for every selected stock.
+- **Scoring**: It calculates a performance score by comparing the **Current Live Price** against the **20-Day Moving Average**.
+- **Weighted Allocation**:
+  - **Strong Uptrend**: Stocks trading above their average get a significantly higher % of the investment (score is squared to amplify rewards).
+  - **Weak Trend**: Stocks trading below their average receive a reduced allocation to minimize risk.
 
 ## Requirements
 
@@ -160,9 +176,9 @@ The UI will automatically open in your browser at `http://localhost:8501`
 ## Notes
 
 - The API uses yfinance to fetch real-time stock data
-- Portfolio allocation uses equal dollar distribution per ticker
+- Portfolio allocation uses a smart momentum algorithm (not equal distribution). Stronger stocks get more capital.
 - Shares are calculated using floor division (no fractional shares)
-- Historical data covers the last 7 days to ensure ~5 trading days
+- Historical data fetches the last 3 months of data to calculate reliable moving average trends.
 - Auto-refresh interval is configurable (default: 30 seconds)
 
 ## Troubleshooting

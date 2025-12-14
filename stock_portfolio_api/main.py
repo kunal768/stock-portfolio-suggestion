@@ -36,7 +36,7 @@ async def suggest_portfolio(input_data: PortfolioInput) -> PortfolioSuggestion:
     """
     try:
         # Step 1: Process strategies and get tickers
-        tickers = process_tickers(input_data.strategies)
+        tickers = await run_in_threadpool(process_tickers, input_data.strategies)
         
         if not tickers:
             raise HTTPException(
@@ -59,7 +59,8 @@ async def suggest_portfolio(input_data: PortfolioInput) -> PortfolioSuggestion:
             allocation_df, leftover_cash = calculate_allocation(
                 input_data.investment_amount,
                 tickers,
-                live_prices
+                live_prices,
+                historical_df
             )
         except Exception as e:
             raise HTTPException(
