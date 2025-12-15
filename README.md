@@ -2,6 +2,7 @@
 
 A FastAPI backend with Streamlit UI for generating stock portfolio suggestions based on investment strategies.
 
+![Architecture Diagram](public/architecture.png)
 ![Home Screen](public/home_screen.png)
 
 ## Features
