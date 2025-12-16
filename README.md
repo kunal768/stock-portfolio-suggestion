@@ -34,11 +34,47 @@ stock-portfolio-suggestion/
 
 ## Installation
 
-### Backend Setup
+### Quick Start (Recommended)
+
+The easiest way to set up and run the application is using the provided run script:
 
 1. Navigate to the project directory:
 ```bash
 cd stock-portfolio-suggestion
+```
+
+2. Make the script executable (first time only):
+```bash
+chmod +x run-script.sh
+```
+
+3. Run the script:
+```bash
+./run-script.sh
+```
+
+The script will:
+- Create a Python virtual environment (if it doesn't exist)
+- Install all backend and frontend dependencies
+- Start both the FastAPI backend and Streamlit frontend
+
+The services will be available at:
+- **Backend API**: `http://localhost:8000`
+- **API Documentation**: `http://localhost:8000/docs`
+- **Frontend UI**: `http://localhost:8501`
+
+Press `Ctrl+C` to stop all services.
+
+### Manual Installation
+
+If you prefer to set up manually:
+
+#### Backend Setup
+
+1. Create and activate a virtual environment:
+```bash
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
 2. Install backend dependencies:
@@ -46,7 +82,7 @@ cd stock-portfolio-suggestion
 pip install -r stock_portfolio_api/requirements.txt
 ```
 
-### UI Setup
+#### UI Setup
 
 1. Install UI dependencies:
 ```bash
@@ -55,7 +91,16 @@ pip install -r ui/requirements.txt
 
 ## Running the Application
 
-### Step 1: Start the FastAPI Backend
+### Using the Run Script (Recommended)
+
+Simply run:
+```bash
+./run-script.sh
+```
+
+### Manual Start
+
+#### Step 1: Start the FastAPI Backend
 
 In one terminal window:
 ```bash
@@ -66,7 +111,7 @@ The API will be available at `http://localhost:8000`
 - API Documentation: `http://localhost:8000/docs`
 - Health Check: `http://localhost:8000/health`
 
-### Step 2: Start the Streamlit UI
+#### Step 2: Start the Streamlit UI
 
 In another terminal window:
 ```bash
